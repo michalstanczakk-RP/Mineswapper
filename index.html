@@ -3,52 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prosty Saper</title>
+    <title>Saper Ekstra - Pigułki</title>
     <style>
+        /* Zmienne CSS do łatwej zmiany motywu */
+        :root {
+            --bg-color: #f0f2f5;
+            --text-color: #333;
+            --panel-bg: #ffffff;
+            --cell-bg: #bbb;
+            --cell-hover: #aaa;
+            --cell-revealed: #ddd;
+            --board-bg: #ccc;
+            --border-color: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f2f5;
+            --panel-bg: #2d2d2d;
+            --cell-bg: #444;
+            --cell-hover: #555;
+            --cell-revealed: #222;
+            --board-bg: #333;
+            --border-color: #444;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
+            justify-content: flex-start;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
         }
+
         h1 {
-            color: #333;
-            margin-bottom: 10px;
+            margin: 5px 0;
         }
-        #controls {
+
+        /* Górny panel (Timer, Życia, Kontrolki) */
+        #top-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 850px;
             margin-bottom: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #board {
-            display: grid;
-            grid-template-columns: repeat(10, 30px);
-            grid-template-rows: repeat(10, 30px);
-            gap: 2px;
-            background-color: #ccc;
-            padding: 5px;
-            border-radius: 5px;
+            background-color: var(--panel-bg);
+            padding: 15px;
+            border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Pasek postępu czasu */
+        #progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 100%;
+            height: 100%;
+            background-color: #28a745;
+            transition: width 1s linear, background-color 0.5s;
+        }
+
+        /* Główny układ gry (Plansza + Instrukcja) */
+        #main-container {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+            align-items: flex-start;
+            justify-content: center;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        /* Plansza - 15 kolumn po 30px */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(15, 30px);
+            grid-template-rows: repeat(15, 30px);
+            gap: 2px;
+            background-color: var(--board-bg);
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
         .cell {
             width: 30px;
             height: 30px;
-            background-color: #bbb;
+            background-color: var(--cell-bg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -56,50 +121,172 @@
             cursor: pointer;
             user-select: none;
             border-radius: 2px;
+            font-size: 14px;
         }
+
         .cell:hover {
-            background-color: #aaa;
+            background-color: var(--cell-hover);
         }
+
         .cell.revealed {
-            background-color: #ddd;
+            background-color: var(--cell-revealed);
             cursor: default;
         }
+
         .cell.mine {
             background-color: #ff4d4d;
         }
+
         .cell.flag {
             background-color: #ffcc00;
         }
-        /* Kolory dla liczb */
-        .count-1 { color: blue; }
-        .count-2 { color: green; }
-        .count-3 { color: red; }
-        .count-4 { color: darkblue; }
-        .count-5 { color: darkred; }
+
+        /* Panel Instrukcji po prawej */
+        #instructions {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-width: 250px;
+            border: 1px solid var(--border-color);
+        }
+
+        #instructions h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        #instructions ul {
+            padding-left: 20px;
+            margin: 10px 0 0 0;
+        }
+
+        #instructions li {
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Przyciski */
+        button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #theme-btn {
+            background-color: #6c757d;
+        }
+        #theme-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* Kolory cyfr */
+        .count-1 { color: #0066ff; }
+        .count-2 { color: #009900; }
+        .count-3 { color: #cc0000; }
+        .count-4 { color: #000066; }
+        .count-5 { color: #660000; }
+        .count-6 { color: #009999; }
+        .count-7 { color: #000000; }
+        .count-8 { color: #888888; }
+
+        /* RWD dla mniejszych ekranów */
+        @media (max-width: 800px) {
+            #main-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            #instructions {
+                max-width: 450px;
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <h1>Saper</h1>
-    <div id="controls">
-        <button onclick="initGame()">Resetuj Grę</button>
+    <h1>Saper Ekstra - Edycja Pigułkowa</h1>
+
+    <div id="top-bar">
+        <div class="stats-row">
+            <span id="lives-display">Życia: ❤️❤️❤️</span>
+            <span id="timer-display">Czas: 25:00</span>
+            <div>
+                <button id="theme-btn" onclick="toggleTheme()">Zmień Motyw 🌗</button>
+                <button onclick="initGame()">Reset 🔄</button>
+            </div>
+        </div>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
     </div>
-    <div id="board"></div>
+
+    <div id="main-container">
+        <div id="board"></div>
+
+        <div id="instructions">
+            <h3>Instrukcja obsługi</h3>
+            <ul>
+                <li><strong>Lewy przycisk myszy (LPM):</strong> Odkrywa wybrane pole.</li>
+                <li><strong>Prawy przycisk myszy (PPM):</strong> Stawia lub ściąga flagę 🚩, którą zaznaczasz podejrzane pole.</li>
+                <li><strong>Cyfry na polach:</strong> Informują, ile pigułek styka się z danym polem (w pionie, poziomie i na ukos).</li>
+                <li><strong>Życia:</strong> Masz dokładnie 3 życia. Trafienie na pigułkę zabiera jedno serduszko.</li>
+                <li><strong>Czas:</strong> Na wyczyszczenie całej planszy masz równe 25 minut.</li>
+            </ul>
+        </div>
+    </div>
 
     <script>
-        const BOARD_SIZE = 10;
-        const MINE_COUNT = 10;
+        const BOARD_SIZE = 15;
+        const MINE_COUNT = 35; // Liczba ukrytych pigułek
+        const TOTAL_TIME = 25 * 60; // 25 minut w sekundach
+
         let board = [];
         let gameOver = false;
+        let lives = 3;
+        let timeRemaining = TOTAL_TIME;
+        let timerInterval = null;
 
         const boardElement = document.getElementById('board');
+        const livesDisplay = document.getElementById('lives-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const progressBar = document.getElementById('progress-bar');
+
+        // Zmiana motywu jasny / ciemny
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
 
         function initGame() {
             boardElement.innerHTML = '';
             board = [];
             gameOver = false;
+            lives = 3;
+            timeRemaining = TOTAL_TIME;
+            updateLivesDisplay();
+            updateTimerDisplay();
             
-            // 1. Tworzenie czystej planszy
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTime, 1000);
+
+            // 1. Tworzenie czystej siatki
             for (let r = 0; r < BOARD_SIZE; r++) {
                 board[r] = [];
                 for (let c = 0; c < BOARD_SIZE; c++) {
@@ -115,7 +302,7 @@
                 }
             }
 
-            // 2. Losowe umieszczanie min
+            // 2. Losowe ukrywanie 35 pigułek
             let minesPlaced = 0;
             while (minesPlaced < MINE_COUNT) {
                 let r = Math.floor(Math.random() * BOARD_SIZE);
@@ -126,7 +313,7 @@
                 }
             }
 
-            // 3. Obliczanie min w sąsiedztwie
+            // 3. Obliczanie cyfr sąsiedztwa
             for (let r = 0; r < BOARD_SIZE; r++) {
                 for (let c = 0; c < BOARD_SIZE; c++) {
                     if (!board[r][c].isMine) {
@@ -135,18 +322,13 @@
                 }
             }
 
-            // 4. Renderowanie planszy w HTML
+            // 4. Budowanie elementów HTML na planszy
             for (let r = 0; r < BOARD_SIZE; r++) {
                 for (let c = 0; c < BOARD_SIZE; c++) {
                     const cellEl = document.createElement('div');
                     cellEl.classList.add('cell');
-                    cellEl.dataset.row = r;
-                    cellEl.dataset.col = c;
                     
-                    // Lewy klik - odkrycie komórki
                     cellEl.addEventListener('click', () => revealCell(r, c));
-                    
-                    // Prawy klik - flaga
                     cellEl.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         toggleFlag(r, c);
@@ -180,18 +362,24 @@
             cell.isRevealed = true;
             cell.element.classList.add('revealed');
 
+            // Trafienie na pigułkę
             if (cell.isMine) {
                 cell.element.classList.add('mine');
-                cell.element.innerText = '💣';
-                endGame(false);
+                cell.element.innerText = '💊';
+                lives--;
+                updateLivesDisplay();
+
+                if (lives <= 0) {
+                    endGame(false, "bomba jebła");
+                }
                 return;
             }
 
+            // Bezpieczne pola
             if (cell.neighborMines > 0) {
                 cell.element.innerText = cell.neighborMines;
                 cell.element.classList.add(`count-${cell.neighborMines}`);
             } else {
-                // Rekurencyjne odkrywanie pustych pól
                 for (let dr = -1; dr <= 1; dr++) {
                     for (let dc = -1; dc <= 1; dc++) {
                         let nr = row + dr;
@@ -221,36 +409,74 @@
             }
         }
 
+        // Zmiana czasu i paska postępu
+        function updateTime() {
+            if (gameOver) return;
+            timeRemaining--;
+            updateTimerDisplay();
+
+            const percentage = (timeRemaining / TOTAL_TIME) * 100;
+            progressBar.style.width = percentage + "%";
+
+            if (percentage < 20) {
+                progressBar.style.backgroundColor = "#dc3545";
+            } else if (percentage < 50) {
+                progressBar.style.backgroundColor = "#ffc107";
+            } else {
+                progressBar.style.backgroundColor = "#28a745";
+            }
+
+            if (timeRemaining <= 0) {
+                endGame(false, "Twój czas się skończył");
+            }
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerDisplay.innerText = `Czas: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        function updateLivesDisplay() {
+            let hearts = "";
+            for (let i = 0; i < 3; i++) {
+                hearts += i < lives ? "❤️" : "🖤";
+            }
+            livesDisplay.innerText = `Życia: ${hearts}`;
+        }
+
         function checkWin() {
             let win = true;
             for (let r = 0; r < BOARD_SIZE; r++) {
                 for (let c = 0; c < BOARD_SIZE; c++) {
-                    // Jeśli pole nie jest miną, a nadal nie zostało odkryte -> gra trwa dalej
                     if (!board[r][c].isMine && !board[r][c].isRevealed) {
                         win = false;
                     }
                 }
             }
-            if (win) endGame(true);
+            if (win) endGame(true, "Wygrałeś! 🎉");
         }
 
-        function endGame(isWin) {
+        function endGame(isWin, message) {
             gameOver = true;
-            // Odkryj wszystkie miny na koniec gracy
+            clearInterval(timerInterval);
+            
+            // Odkrycie wszystkich ukrytych pigułek na koniec
             for (let r = 0; r < BOARD_SIZE; r++) {
                 for (let c = 0; c < BOARD_SIZE; c++) {
                     if (board[r][c].isMine) {
                         board[r][c].element.classList.add('mine');
-                        board[r][c].element.innerText = '💣';
+                        board[r][c].element.innerText = '💊';
                     }
                 }
             }
+            
             setTimeout(() => {
-                alert(isWin ? 'Wygrałeś! 🎉' : 'Bum! Przegrana. 💥');
+                alert(message);
             }, 100);
         }
 
-        // Uruchomienie gry przy starcie strony
+        // Uruchomienie gry
         initGame();
     </script>
 </body>
