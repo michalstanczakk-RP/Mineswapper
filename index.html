@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prosty Saper</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            grid-template-rows: repeat(10, 30px);
+            gap: 2px;
+            background-color: #ccc;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #bbb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 2px;
+        }
+        .cell:hover {
+            background-color: #aaa;
+        }
+        .cell.revealed {
+            background-color: #ddd;
+            cursor: default;
+        }
+        .cell.mine {
+            background-color: #ff4d4d;
+        }
+        .cell.flag {
+            background-color: #ffcc00;
+        }
+        /* Kolory dla liczb */
+        .count-1 { color: blue; }
+        .count-2 { color: green; }
+        .count-3 { color: red; }
+        .count-4 { color: darkblue; }
+        .count-5 { color: darkred; }
+    </style>
+</head>
+<body>
+
+    <h1>Saper</h1>
+    <div id="controls">
+        <button onclick="initGame()">Resetuj Grę</button>
+    </div>
+    <div id="board"></div>
+
+    <script>
+        const BOARD_SIZE = 10;
+        const MINE_COUNT = 10;
+        let board = [];
+        let gameOver = false;
+
+        const boardElement = document.getElementById('board');
+
+        function initGame() {
+            boardElement.innerHTML = '';
+            board = [];
+            gameOver = false;
+            
+            // 1. Tworzenie czystej planszy
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                board[r] = [];
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    board[r][c] = {
+                        row: r,
+                        col: c,
+                        isMine: false,
+                        isRevealed: false,
+                        isFlagged: false,
+                        neighborMines: 0,
+                        element: null
+                    };
+                }
+            }
+
+            // 2. Losowe umieszczanie min
+            let minesPlaced = 0;
+            while (minesPlaced < MINE_COUNT) {
+                let r = Math.floor(Math.random() * BOARD_SIZE);
+                let c = Math.floor(Math.random() * BOARD_SIZE);
+                if (!board[r][c].isMine) {
+                    board[r][c].isMine = true;
+                    minesPlaced++;
+                }
+            }
+
+            // 3. Obliczanie min w sąsiedztwie
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (!board[r][c].isMine) {
+                        board[r][c].neighborMines = countMinesAround(r, c);
+                    }
+                }
+            }
+
+            // 4. Renderowanie planszy w HTML
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.classList.add('cell');
+                    cellEl.dataset.row = r;
+                    cellEl.dataset.col = c;
+                    
+                    // Lewy klik - odkrycie komórki
+                    cellEl.addEventListener('click', () => revealCell(r, c));
+                    
+                    // Prawy klik - flaga
+                    cellEl.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        toggleFlag(r, c);
+                    });
+
+                    boardElement.appendChild(cellEl);
+                    board[r][c].element = cellEl;
+                }
+            }
+        }
+
+        function countMinesAround(row, col) {
+            let count = 0;
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    let nr = row + dr;
+                    let nc = col + dc;
+                    if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                        if (board[nr][nc].isMine) count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        function revealCell(row, col) {
+            if (gameOver) return;
+            let cell = board[row][col];
+            if (cell.isRevealed || cell.isFlagged) return;
+
+            cell.isRevealed = true;
+            cell.element.classList.add('revealed');
+
+            if (cell.isMine) {
+                cell.element.classList.add('mine');
+                cell.element.innerText = '💣';
+                endGame(false);
+                return;
+            }
+
+            if (cell.neighborMines > 0) {
+                cell.element.innerText = cell.neighborMines;
+                cell.element.classList.add(`count-${cell.neighborMines}`);
+            } else {
+                // Rekurencyjne odkrywanie pustych pól
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        let nr = row + dr;
+                        let nc = col + dc;
+                        if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                            revealCell(nr, nc);
+                        }
+                    }
+                }
+            }
+
+            checkWin();
+        }
+
+        function toggleFlag(row, col) {
+            if (gameOver) return;
+            let cell = board[row][col];
+            if (cell.isRevealed) return;
+
+            cell.isFlagged = !cell.isFlagged;
+            if (cell.isFlagged) {
+                cell.element.classList.add('flag');
+                cell.element.innerText = '🚩';
+            } else {
+                cell.element.classList.remove('flag');
+                cell.element.innerText = '';
+            }
+        }
+
+        function checkWin() {
+            let win = true;
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    // Jeśli pole nie jest miną, a nadal nie zostało odkryte -> gra trwa dalej
+                    if (!board[r][c].isMine && !board[r][c].isRevealed) {
+                        win = false;
+                    }
+                }
+            }
+            if (win) endGame(true);
+        }
+
+        function endGame(isWin) {
+            gameOver = true;
+            // Odkryj wszystkie miny na koniec gracy
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (board[r][c].isMine) {
+                        board[r][c].element.classList.add('mine');
+                        board[r][c].element.innerText = '💣';
+                    }
+                }
+            }
+            setTimeout(() => {
+                alert(isWin ? 'Wygrałeś! 🎉' : 'Bum! Przegrana. 💥');
+            }, 100);
+        }
+
+        // Uruchomienie gry przy starcie strony
+        initGame();
+    </script>
+</body>
+</html>
