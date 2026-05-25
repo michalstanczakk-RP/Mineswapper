@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saper Ekstra - Pigułki</title>
+    <title>Yaroi game</title>
     <style>
         /* Zmienne CSS do łatwej zmiany motywu */
         :root {
@@ -45,6 +45,7 @@
 
         h1 {
             margin: 5px 0;
+            letter-spacing: 1px;
         }
 
         /* Górny panel (Timer, Życia, Kontrolki) */
@@ -94,7 +95,7 @@
             gap: 30px;
             align-items: flex-start;
             justify-content: center;
-            max-width: 1100px;
+            max-width: 1150px;
             width: 100%;
         }
 
@@ -121,7 +122,7 @@
             cursor: pointer;
             user-select: none;
             border-radius: 2px;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         .cell:hover {
@@ -147,7 +148,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-width: 250px;
+            max-width: 300px;
             border: 1px solid var(--border-color);
         }
 
@@ -157,15 +158,34 @@
             padding-bottom: 5px;
         }
 
+        #instructions h4 {
+            margin: 15px 0 5px 0;
+            color: #555;
+        }
+        [data-theme="dark"] #instructions h4 {
+            color: #bbb;
+        }
+
         #instructions ul {
             padding-left: 20px;
-            margin: 10px 0 0 0;
+            margin: 5px 0;
         }
 
         #instructions li {
             margin-bottom: 8px;
             font-size: 14px;
             line-height: 1.4;
+        }
+
+        .lang-legend {
+            list-style: none;
+            padding-left: 0 !important;
+        }
+
+        .lang-legend li {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 4px !important;
         }
 
         /* Przyciski */
@@ -192,7 +212,7 @@
             background-color: #5a6268;
         }
 
-        /* Kolory cyfr */
+        /* Kolory japońskich cyfr */
         .count-1 { color: #0066ff; }
         .count-2 { color: #009900; }
         .count-3 { color: #cc0000; }
@@ -201,9 +221,10 @@
         .count-6 { color: #009999; }
         .count-7 { color: #000000; }
         .count-8 { color: #888888; }
+        [data-theme="dark"] .count-7 { color: #ffffff; }
 
-        /* RWD dla mniejszych ekranów */
-        @media (max-width: 800px) {
+        /* RWD */
+        @media (max-width: 850px) {
             #main-container {
                 flex-direction: column;
                 align-items: center;
@@ -217,7 +238,7 @@
 </head>
 <body>
 
-    <h1>Saper Ekstra - Edycja Pigułkowa</h1>
+    <h1>Yaroi game</h1>
 
     <div id="top-bar">
         <div class="stats-row">
@@ -239,19 +260,42 @@
         <div id="instructions">
             <h3>Instrukcja obsługi</h3>
             <ul>
-                <li><strong>Lewy przycisk myszy (LPM):</strong> Odkrywa wybrane pole.</li>
-                <li><strong>Prawy przycisk myszy (PPM):</strong> Stawia lub ściąga flagę 🚩, którą zaznaczasz podejrzane pole.</li>
-                <li><strong>Cyfry na polach:</strong> Informują, ile pigułek styka się z danym polem (w pionie, poziomie i na ukos).</li>
-                <li><strong>Życia:</strong> Masz dokładnie 3 życia. Trafienie na pigułkę zabiera jedno serduszko.</li>
-                <li><strong>Czas:</strong> Na wyczyszczenie całej planszy masz równe 25 minut.</li>
+                <li><strong>LPM:</strong> Odkrywa wybrane pole.</li>
+                <li><strong>PPM:</strong> Stawia lub ściąga flagę 🚩.</li>
+                <li><strong>Życia:</strong> Masz 3 życia. Trafienie na pigułkę zabiera serduszko.</li>
+                <li><strong>Czas:</strong> Masz dokładnie 25 minut.</li>
+            </ul>
+
+            <h4>Słowniczek japońskich cyfr:</h4>
+            <ul class="lang-legend">
+                <li style="color: #0066ff;">一 (1) - Niebieski</li>
+                <li style="color: #009900;">二 (2) - Zielony</li>
+                <li style="color: #cc0000;">三 (3) - Czerwony</li>
+                <li style="color: #000066;">四 (4) - Ciemnoniebieski</li>
+                <li style="color: #660000;">五 (5) - Ciemnoczerwony</li>
+                <li style="color: #009999;">六 (6) - Morska zieleń</li>
+                <li style="color: #a0a0a0;">七 (7) - Czarny / Biały</li>
+                <li style="color: #888888;">八 (8) - Szary</li>
             </ul>
         </div>
     </div>
 
     <script>
         const BOARD_SIZE = 15;
-        const MINE_COUNT = 35; // Liczba ukrytych pigułek
-        const TOTAL_TIME = 25 * 60; // 25 minut w sekundach
+        const MINE_COUNT = 35; 
+        const TOTAL_TIME = 25 * 60; 
+
+        // Słownik tłumaczący zwykłe cyfry na znaki Kanji
+        const kanjiNumbers = {
+            1: '一',
+            2: '二',
+            3: '三',
+            4: '四',
+            5: '五',
+            6: '六',
+            7: '七',
+            8: '八'
+        };
 
         let board = [];
         let gameOver = false;
@@ -264,7 +308,6 @@
         const timerDisplay = document.getElementById('timer-display');
         const progressBar = document.getElementById('progress-bar');
 
-        // Zmiana motywu jasny / ciemny
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             if (currentTheme === 'dark') {
@@ -286,7 +329,7 @@
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTime, 1000);
 
-            // 1. Tworzenie czystej siatki
+            // 1. Generowanie planszy
             for (let r = 0; r < BOARD_SIZE; r++) {
                 board[r] = [];
                 for (let c = 0; c < BOARD_SIZE; c++) {
@@ -322,7 +365,7 @@
                 }
             }
 
-            // 4. Budowanie elementów HTML na planszy
+            // 4. Budowanie elementów HTML
             for (let r = 0; r < BOARD_SIZE; r++) {
                 for (let c = 0; c < BOARD_SIZE; c++) {
                     const cellEl = document.createElement('div');
@@ -375,9 +418,9 @@
                 return;
             }
 
-            // Bezpieczne pola
+            // Bezpieczne pola - wyświetlanie japońskiego Kanji zamiast cyfry
             if (cell.neighborMines > 0) {
-                cell.element.innerText = cell.neighborMines;
+                cell.element.innerText = kanjiNumbers[cell.neighborMines];
                 cell.element.classList.add(`count-${cell.neighborMines}`);
             } else {
                 for (let dr = -1; dr <= 1; dr++) {
@@ -409,7 +452,6 @@
             }
         }
 
-        // Zmiana czasu i paska postępu
         function updateTime() {
             if (gameOver) return;
             timeRemaining--;
@@ -454,14 +496,13 @@
                     }
                 }
             }
-            if (win) endGame(true, "Wygrałeś! 🎉");
+            if (win) endGame(true, "Tym razem ci się udało");
         }
 
         function endGame(isWin, message) {
             gameOver = true;
             clearInterval(timerInterval);
             
-            // Odkrycie wszystkich ukrytych pigułek na koniec
             for (let r = 0; r < BOARD_SIZE; r++) {
                 for (let c = 0; c < BOARD_SIZE; c++) {
                     if (board[r][c].isMine) {
@@ -476,7 +517,7 @@
             }, 100);
         }
 
-        // Uruchomienie gry
+        // Automatyczny start przy każdym odświeżeniu
         initGame();
     </script>
 </body>
